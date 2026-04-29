@@ -14,10 +14,11 @@ import (
 
 // Client represents a single connected user in a document room.
 type Client struct {
-	ID    uuid.UUID
-	Conn  *websocket.Conn
-	Send  chan []byte // Channel for outbound messages
-	DocID uuid.UUID
+	ID      uuid.UUID
+	Conn    *websocket.Conn
+	Send    chan []byte // Channel for outbound messages
+	DocID   uuid.UUID
+	CanEdit bool
 }
 
 // Room manages a group of clients editing the same document.
