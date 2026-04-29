@@ -12,6 +12,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"lattice/backend/cmd/api-gateway-service/handlers"
 	"lattice/backend/internal/database"
@@ -26,11 +27,14 @@ import (
 // main configures routes and starts the Echo HTTP server.
 func main() {
 	e := echo.New()
-	db, err := database.NewMySQLDB()
+	db, err := database.NewPostgresDB()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 	defer db.Close()
+	if err := database.EnsureSchema(context.Background(), db); err != nil {
+		e.Logger.Fatal(err)
+	}
 	h := &handlers.AuthHandler{DB: db}
 
 	e.POST("/register", h.Register)

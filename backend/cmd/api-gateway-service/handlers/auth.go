@@ -4,10 +4,12 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"time"
 
 	"lattice/backend/internal/auth"
 	"lattice/backend/internal/models"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,28 +59,34 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	if err := c.Bind(r); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
 	}
+	if r.Email == "" || r.Password == "" || r.Name == "" {
+		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "email, password and name are required"})
+	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "could not hash password"})
 	}
 
-	_, err = h.DB.Exec(
-		`INSERT INTO users (email, password_hash, display_name) VALUES (?, ?, ?)`,
-		r.Email,
+	user := models.User{
+		ID:          uuid.New(),
+		Email:       r.Email,
+		DisplayName: r.Name,
+		CreatedAt:   time.Now().UTC(),
+	}
+	err = h.DB.QueryRow(
+		`INSERT INTO users (id, email, password_hash, display_name, created_at)
+		 VALUES ($1, $2, $3, $4, $5)
+		 RETURNING id, email, display_name, created_at`,
+		user.ID,
+		user.Email,
 		string(hashed),
-		r.Name,
-	)
+		user.DisplayName,
+		user.CreatedAt,
+	).Scan(&user.ID, &user.Email, &user.DisplayName, &user.CreatedAt)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "user already exists"})
 	}
-
-	var user models.User
-	row := h.DB.QueryRow(`SELECT id, email, display_name FROM users WHERE email = ? LIMIT 1`, r.Email)
-	if err := row.Scan(&user.ID, &user.Email, &user.DisplayName); err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "could not load created user"})
-	}
-	user.PasswordHash = ""
 
 	return c.JSON(http.StatusCreated, user)
 }
@@ -103,7 +111,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	var user models.User
 	row := h.DB.QueryRow(
-		`SELECT id, email, password_hash, display_name FROM users WHERE email = ? LIMIT 1`,
+		`SELECT id, email, password_hash, display_name FROM users WHERE email = $1 LIMIT 1`,
 		r.Email,
 	)
 	if err := row.Scan(&user.ID, &user.Email, &user.PasswordHash, &user.DisplayName); err != nil {
