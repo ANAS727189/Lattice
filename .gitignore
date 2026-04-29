@@ -1,0 +1,37 @@
+.env
+.env.*
+!.env.example
+
+# Local editor and agent state
+.vscode/
+.idea/
+.codex
+.codex/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and runtime output
+*.log
+logs/
+tmp/
+temp/
+
+# Go
+bin/
+coverage.out
+*.test
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Docker and local data
+*.pid
+*.seed
