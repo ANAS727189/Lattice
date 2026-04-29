@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
 # Compile the API Gateway binary
-cmd = "go build -o ./tmp/api-server ./cmd/api-gateway/main.go"
+cmd = "/usr/local/go/bin/go build -o ./tmp/api-server ./cmd/api-gateway-service"
 # Run the compiled binary
 bin = "./tmp/api-server"
 # Watch for changes in these directories

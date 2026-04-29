@@ -7,3 +7,4 @@ coverage.out
 *.test
 *.log
 tmp/
+node_modules/

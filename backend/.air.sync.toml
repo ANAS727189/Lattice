@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
 # Compile the Sync Service binary
-cmd = "go build -o ./tmp/sync-server ./cmd/sync-service/main.go"
+cmd = "/usr/local/go/bin/go build -o ./tmp/sync-server ./cmd/sync-service"
 # Run the compiled binary
 bin = "./tmp/sync-server"
 # Watch for changes in these directories
