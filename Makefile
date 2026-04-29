@@ -1,6 +1,7 @@
 # Variables for Cloud Deployment
 DOCKER_USERNAME ?= yourusername
 IMAGE_TAG ?= v1.0.0
+GO ?= /usr/local/go/bin/go
 
 # .PHONY tells Make that these aren't real files
 .PHONY: infra-up infra-down infra-clean run-api run-sync run-client fmt tidy docker-build docker-push
@@ -11,13 +12,13 @@ IMAGE_TAG ?= v1.0.0
 
 # Start databases in the background
 infra-up:
-	docker compose -f deployments/docker-compose.yml up -d
+	docker compose -f backend/deployments/docker-compose.yaml up -d
 
 infra-down:
-	docker compose -f deployments/docker-compose.yml down
+	docker compose -f backend/deployments/docker-compose.yaml down
 
 infra-clean:
-	docker compose -f deployments/docker-compose.yml down -v --remove-orphans
+	docker compose -f backend/deployments/docker-compose.yaml down -v --remove-orphans
 
 # Run microservices with hot-reload (Air)
 run-api:
@@ -55,7 +56,7 @@ release: docker-build docker-push
 # ==============================================================================
 
 fmt:
-	cd backend && go fmt ./...
+	cd backend && $(GO) fmt ./...
 
 tidy:
-	cd backend && go mod tidy
+	cd backend && $(GO) mod tidy

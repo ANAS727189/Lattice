@@ -5,8 +5,6 @@
 # Local editor and agent state
 .vscode/
 .idea/
-.codex
-.codex/
 *.swp
 *.swo
 
