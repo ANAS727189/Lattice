@@ -1,0 +1,46 @@
+basePath: /
+info:
+  contact: {}
+  description: WebSocket endpoint for realtime collaboration.
+  title: Lattice Sync Service
+  version: "1.0"
+paths:
+  /ws/{id}:
+    get:
+      parameters:
+      - description: Document ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Connect to a document WebSocket
+      tags:
+      - sync
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: Use "Bearer <token>"
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
