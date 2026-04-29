@@ -10,11 +10,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
 // Worker encapsulates the dependencies needed to consume Redis updates and
-// persist compacted snapshots to the database.
+// persist replayable document updates to the database.
 type Worker struct {
 	// DB is the backing database connection.
 	DB *sql.DB
@@ -24,8 +25,12 @@ type Worker struct {
 
 // main wires dependencies and starts the persistence loops.
 func main() {
-	db, err := database.NewMySQLDB()
+	db, err := database.NewPostgresDB()
 	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	if err := database.EnsureSchema(context.Background(), db); err != nil {
 		log.Fatal(err)
 	}
 	rdb := cache.NewRedisClient()
@@ -52,6 +57,9 @@ func (w *Worker) listenAndStore() {
 
 	for msg := range ch {
 		docID := msg.Channel
+		if _, err := uuid.Parse(docID); err != nil {
+			continue
+		}
 		updateData := []byte(msg.Payload)
 
 		// Push update to a Redis List for this specific document
@@ -73,26 +81,32 @@ func (w *Worker) startFlushTicker() {
 		docIDs, _ := w.RDB.SMembers(ctx, "dirty_docs").Result()
 
 		for _, docID := range docIDs {
-			w.flushToDB(docID)
-			// Remove from dirty set after processing
+			// Remove before processing so updates arriving during this flush mark
+			// the document dirty for the next tick.
 			w.RDB.SRem(ctx, "dirty_docs", docID)
+			w.flushToDB(docID)
 		}
 	}
 }
 
-// flushToDB drains a document's buffered updates, compacts them, and writes the
-// resulting snapshot into the database.
+// flushToDB drains a document's buffered updates and writes them to the database.
 func (w *Worker) flushToDB(docID string) {
 	ctx := context.Background()
 	listKey := "buffer:" + docID
 
-	// 1. Atomically get and delete all updates from the Redis buffer
-	// This ensures we don't process the same updates twice
-	updates, err := w.RDB.LRange(ctx, listKey, 0, -1).Result()
+	updates, err := redis.NewScript(`
+		local updates = redis.call("LRANGE", KEYS[1], 0, -1)
+		if #updates > 0 then
+			redis.call("DEL", KEYS[1])
+		end
+		return updates
+	`).Run(ctx, w.RDB, []string{listKey}).StringSlice()
 	if err != nil || len(updates) == 0 {
+		if err != nil {
+			log.Printf("Failed to drain Redis buffer for doc %s: %v", docID, err)
+		}
 		return
 	}
-	w.RDB.Del(ctx, listKey)
 
 	// Convert string slice from Redis back to binary slice
 	byteUpdates := make([][]byte, len(updates))
@@ -100,16 +114,9 @@ func (w *Worker) flushToDB(docID string) {
 		byteUpdates[i] = []byte(v)
 	}
 
-	// 2. USE YOUR ENGINE: Run the advanced compaction
-	finalSnapshot := w.ApplyAndCompact(docID, byteUpdates)
-
-	// 3. Save the single, compacted snapshot to Postgres
-	query := `UPDATE documents SET content_snapshot = ?, updated_at = NOW() WHERE id = ?`
-	_, err = w.DB.Exec(query, finalSnapshot, docID)
-
-	if err != nil {
+	if err := w.StoreUpdates(ctx, docID, byteUpdates); err != nil {
 		log.Printf("Failed to save doc %s: %v", docID, err)
 	} else {
-		log.Printf("Successfully compacted and saved doc: %s", docID)
+		log.Printf("Successfully persisted %d updates for doc: %s", len(byteUpdates), docID)
 	}
 }
