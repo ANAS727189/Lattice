@@ -18,6 +18,7 @@
 package main
 
 import (
+	"context"
 	"lattice/backend/cmd/doc-service/handlers"
 	"lattice/backend/internal/database"
 	"lattice/backend/internal/middleware"
@@ -31,11 +32,14 @@ import (
 // main configures routes and starts the Echo HTTP server.
 func main() {
 	e := echo.New()
-	db, err := database.NewMySQLDB()
+	db, err := database.NewPostgresDB()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 	defer db.Close()
+	if err := database.EnsureSchema(context.Background(), db); err != nil {
+		e.Logger.Fatal(err)
+	}
 
 	h := &handlers.DocHandler{DB: db}
 
@@ -45,6 +49,11 @@ func main() {
 
 	g.POST("", h.CreateDocument)
 	g.GET("", h.ListDocuments)
+	g.GET("/:id", h.GetDocument)
+	g.PATCH("/:id", h.UpdateDocument)
+	g.DELETE("/:id", h.DeleteDocument)
+	g.PUT("/:id/permissions/:user_id", h.UpsertPermission)
+	g.DELETE("/:id/permissions/:user_id", h.DeletePermission)
 
 	// Swagger UI: /swagger/index.html
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
