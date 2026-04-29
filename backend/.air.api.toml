@@ -1,0 +1,20 @@
+# Config file for Air to run the API Gateway
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Compile the API Gateway binary
+cmd = "go build -o ./tmp/api-server ./cmd/api-gateway/main.go"
+# Run the compiled binary
+bin = "./tmp/api-server"
+# Watch for changes in these directories
+include_dir = ["cmd", "internal", "pkg"]
+# Exclude these directories from being watched
+exclude_dir = ["assets", "tmp", "vendor", "deployments"]
+# Delay after file modification before rebuilding (ms)
+delay = 1000
+# Stop running old binary when building
+kill_delay = 500
+
+[log]
+time = true

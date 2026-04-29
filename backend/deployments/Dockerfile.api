@@ -1,0 +1,37 @@
+# ==========================================
+# Stage 1: Build the Go binary
+# ==========================================
+FROM golang:1.22-alpine AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Go module files first for better layer caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the rest of the application source code
+COPY . .
+
+# Compile the Go binary. 
+# CGO_ENABLED=0 is the secret to a perfectly static, portable binary.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /api-server ./cmd/api-gateway/main.go
+
+# ==========================================
+# Stage 2: Create the tiny production image
+# ==========================================
+FROM alpine:latest
+
+# Add root certificates in case your API needs to make HTTPS calls out
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+# Copy ONLY the compiled binary from the builder stage
+COPY --from=builder /api-server .
+
+# Expose the port your API runs on (e.g., 8080)
+EXPOSE 8080
+
+# Command to run the executable
+CMD ["./api-server"]

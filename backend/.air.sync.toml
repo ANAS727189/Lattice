@@ -1,0 +1,17 @@
+# Config file for Air to run the Sync Service
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Compile the Sync Service binary
+cmd = "go build -o ./tmp/sync-server ./cmd/sync-service/main.go"
+# Run the compiled binary
+bin = "./tmp/sync-server"
+# Watch for changes in these directories
+include_dir = ["cmd", "internal", "pkg"]
+exclude_dir = ["assets", "tmp", "vendor", "deployments"]
+delay = 1000
+kill_delay = 500
+
+[log]
+time = true
