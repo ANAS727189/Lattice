@@ -16,11 +16,14 @@ import (
 func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
+		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if authHeader == "" {
+			token = c.QueryParam("token")
+		}
+		if token == "" {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Missing token"})
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer ")
 		claims, err := auth.ValidateToken(token)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
