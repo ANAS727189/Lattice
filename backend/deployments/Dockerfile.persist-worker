@@ -1,0 +1,22 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /persist-worker ./cmd/persist-worker-service
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY --from=builder /persist-worker .
+COPY tools/yjs-compactor ./tools/yjs-compactor
+
+RUN cd tools/yjs-compactor && npm ci --omit=dev
+
+ENV YJS_COMPACTOR_PATH=/app/tools/yjs-compactor/compact-yjs.mjs
+
+CMD ["./persist-worker"]

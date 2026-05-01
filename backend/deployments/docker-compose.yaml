@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: docs_postgres
+    container_name: lattice_postgres
     environment:
-      POSTGRES_USER: docs_user
-      POSTGRES_PASSWORD: docs_password
-      POSTGRES_DB: docs_db
+      POSTGRES_USER: lattice
+      POSTGRES_PASSWORD: lattice
+      POSTGRES_DB: lattice
     ports:
       - "5432:5432"
     volumes:
@@ -16,17 +14,16 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: docs_redis
+    container_name: lattice_redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
 
-  # Local S3 alternative for object storage
   minio:
     image: minio/minio
-    container_name: docs_minio
+    container_name: lattice_minio
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password123
@@ -36,6 +33,100 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.api
+    container_name: lattice_api_gateway
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lattice
+      DB_PASSWORD: lattice
+      DB_NAME: lattice
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  doc-service:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.doc
+    container_name: lattice_doc_service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lattice
+      DB_PASSWORD: lattice
+      DB_NAME: lattice
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  sync-service:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.sync
+    container_name: lattice_sync_service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lattice
+      DB_PASSWORD: lattice
+      DB_NAME: lattice
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+
+  persist-worker:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.persist-worker
+    container_name: lattice_persist_worker
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lattice
+      DB_PASSWORD: lattice
+      DB_NAME: lattice
+      REDIS_ADDR: redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+        NEXT_PUBLIC_DOCS_BASE_URL: http://localhost:8081
+        NEXT_PUBLIC_SYNC_BASE_URL: ws://localhost:8082
+    container_name: lattice_frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_DOCS_BASE_URL: http://localhost:8081
+      NEXT_PUBLIC_SYNC_BASE_URL: ws://localhost:8082
+    depends_on:
+      - api-gateway
+      - doc-service
+      - sync-service
+    ports:
+      - "3000:3000"
     restart: unless-stopped
 
 volumes:
