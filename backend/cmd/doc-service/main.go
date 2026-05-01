@@ -21,9 +21,14 @@ import (
 	"context"
 	"lattice/backend/cmd/doc-service/handlers"
 	"lattice/backend/internal/database"
-	"lattice/backend/internal/middleware"
+	appmiddleware "lattice/backend/internal/middleware"
+	"log"
 
+	"net/http"
+
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	echomw "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
 	_ "lattice/backend/cmd/doc-service/docs"
@@ -31,7 +36,17 @@ import (
 
 // main configures routes and starts the Echo HTTP server.
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found (or error loading it). Relying on system environment variables.")
+	}
 	e := echo.New()
+
+	e.Use(echomw.CORSWithConfig(echomw.CORSConfig{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
+
 	db, err := database.NewPostgresDB()
 	if err != nil {
 		e.Logger.Fatal(err)
@@ -45,13 +60,14 @@ func main() {
 
 	// Group routes that require authentication
 	g := e.Group("/docs")
-	g.Use(middleware.JWTMiddleware)
+	g.Use(appmiddleware.JWTMiddleware)
 
 	g.POST("", h.CreateDocument)
 	g.GET("", h.ListDocuments)
 	g.GET("/:id", h.GetDocument)
 	g.PATCH("/:id", h.UpdateDocument)
 	g.DELETE("/:id", h.DeleteDocument)
+	g.GET("/:id/permissions", h.ListPermissions)
 	g.PUT("/:id/permissions/:user_id", h.UpsertPermission)
 	g.DELETE("/:id/permissions/:user_id", h.DeletePermission)
 

@@ -46,6 +46,15 @@ type PermissionRequest struct {
 	Role string `json:"role" example:"editor"`
 }
 
+// PermissionResponse is returned for document sharing state.
+type PermissionResponse struct {
+	DocumentID  uuid.UUID `json:"document_id"`
+	UserID      uuid.UUID `json:"user_id"`
+	Role        string    `json:"role"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"display_name"`
+}
+
 // CreateDocument creates a new empty document owned by the authenticated user.
 //
 // @Summary Create a document
@@ -243,6 +252,55 @@ func (h *DocHandler) DeleteDocument(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// ListPermissions lists explicit users shared on a document. Only owners can view it.
+func (h *DocHandler) ListPermissions(c echo.Context) error {
+	userID, docID, ok := parseUserAndDoc(c)
+	if !ok {
+		return parseError(c)
+	}
+
+	role, err := h.roleForDocument(c, userID, docID)
+	if err != nil {
+		return roleError(c, err)
+	}
+	if role != roleOwner {
+		return c.JSON(http.StatusForbidden, ErrorResponse{Error: "owner access required"})
+	}
+
+	rows, err := h.DB.QueryContext(
+		c.Request().Context(),
+		`SELECT p.document_id, p.user_id, p.role, u.email, u.display_name
+		 FROM document_permissions p
+		 JOIN users u ON u.id = p.user_id
+		 WHERE p.document_id = $1
+		 ORDER BY u.display_name ASC`,
+		docID,
+	)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "fetch failed"})
+	}
+	defer rows.Close()
+
+	permissions := make([]PermissionResponse, 0)
+	for rows.Next() {
+		var permission PermissionResponse
+		if err := rows.Scan(
+			&permission.DocumentID,
+			&permission.UserID,
+			&permission.Role,
+			&permission.Email,
+			&permission.DisplayName,
+		); err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "fetch failed"})
+		}
+		permissions = append(permissions, permission)
+	}
+	if err := rows.Err(); err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "fetch failed"})
+	}
+	return c.JSON(http.StatusOK, permissions)
+}
+
 // UpsertPermission grants or updates a user's role for a document.
 func (h *DocHandler) UpsertPermission(c echo.Context) error {
 	userID, docID, ok := parseUserAndDoc(c)
@@ -273,22 +331,33 @@ func (h *DocHandler) UpsertPermission(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "role must be viewer or editor"})
 	}
 
-	permission := models.DocumentPermission{
+	permission := PermissionResponse{
 		DocumentID: docID,
 		UserID:     targetID,
 		Role:       r.Role,
 	}
 	err = h.DB.QueryRowContext(
 		c.Request().Context(),
-		`INSERT INTO document_permissions (document_id, user_id, role)
+		`WITH saved AS (
+			INSERT INTO document_permissions (document_id, user_id, role)
 		 VALUES ($1, $2, $3)
 		 ON CONFLICT (document_id, user_id)
 		 DO UPDATE SET role = EXCLUDED.role, updated_at = NOW()
-		 RETURNING document_id, user_id, role`,
+		 RETURNING document_id, user_id, role
+		 )
+		 SELECT saved.document_id, saved.user_id, saved.role, u.email, u.display_name
+		 FROM saved
+		 JOIN users u ON u.id = saved.user_id`,
 		permission.DocumentID,
 		permission.UserID,
 		permission.Role,
-	).Scan(&permission.DocumentID, &permission.UserID, &permission.Role)
+	).Scan(
+		&permission.DocumentID,
+		&permission.UserID,
+		&permission.Role,
+		&permission.Email,
+		&permission.DisplayName,
+	)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "could not save permission"})
 	}
