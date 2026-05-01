@@ -4,6 +4,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 	"time"
 
 	"lattice/backend/internal/auth"
@@ -18,6 +19,64 @@ import (
 type AuthHandler struct {
 	// DB is the backing database connection.
 	DB *sql.DB
+}
+
+// Me returns the authenticated user's profile.
+func (h *AuthHandler) Me(c echo.Context) error {
+	userID, ok := c.Get("user_id").(uuid.UUID)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing user context"})
+	}
+
+	var user models.User
+	err := h.DB.QueryRowContext(
+		c.Request().Context(),
+		`SELECT id, email, display_name, created_at FROM users WHERE id = $1`,
+		userID,
+	).Scan(&user.ID, &user.Email, &user.DisplayName, &user.CreatedAt)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, ErrorResponse{Error: "user not found"})
+	}
+	return c.JSON(http.StatusOK, user)
+}
+
+// SearchUsers returns users whose email or display name matches the query.
+func (h *AuthHandler) SearchUsers(c echo.Context) error {
+	if _, ok := c.Get("user_id").(uuid.UUID); !ok {
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing user context"})
+	}
+
+	query := strings.TrimSpace(c.QueryParam("q"))
+	if len(query) < 2 {
+		return c.JSON(http.StatusOK, []models.User{})
+	}
+
+	rows, err := h.DB.QueryContext(
+		c.Request().Context(),
+		`SELECT id, email, display_name
+		 FROM users
+		 WHERE email ILIKE $1 OR display_name ILIKE $1
+		 ORDER BY display_name ASC
+		 LIMIT 8`,
+		"%"+query+"%",
+	)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "search failed"})
+	}
+	defer rows.Close()
+
+	users := make([]models.User, 0)
+	for rows.Next() {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.Email, &user.DisplayName); err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "search failed"})
+		}
+		users = append(users, user)
+	}
+	if err := rows.Err(); err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "search failed"})
+	}
+	return c.JSON(http.StatusOK, users)
 }
 
 // ErrorResponse represents a standard error payload.
