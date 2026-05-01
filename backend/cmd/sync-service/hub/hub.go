@@ -45,8 +45,8 @@ func NewServiceHub() *ServiceHub {
 // StartRedisLoop subscribes to a document channel and forwards messages into the room.
 //
 // This enables cross-instance fan-out when multiple sync-service processes are running.
-func (r *Room) StartRedisLoop(ctx context.Context, rdb *redis.Client, docID uuid.UUID) {
-	pubsub := rdb.Subscribe(ctx, docID.String())
+func (r *Room) StartRedisLoop(ctx context.Context, rdb *redis.Client, channel string) {
+	pubsub := rdb.Subscribe(ctx, channel)
 	defer pubsub.Close()
 
 	ch := pubsub.Channel()

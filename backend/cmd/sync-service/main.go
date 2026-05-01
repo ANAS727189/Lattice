@@ -31,6 +31,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -43,6 +44,11 @@ var rdb *redis.Client
 
 // db is used for access checks and persisted update replay.
 var db *sql.DB
+
+const (
+	messageDocumentUpdate byte = 0
+	messageAwareness     byte = 1
+)
 
 // upgrader upgrades HTTP requests to WebSocket connections.
 var upgrader = websocket.Upgrader{
@@ -65,7 +71,8 @@ func handleClient(h *hub.ServiceHub, c *hub.Client) {
 		}
 		h.Rooms[c.DocID] = room
 		go runRoom(room) // Start the room's broadcast loop
-		go room.StartRedisLoop(context.Background(), rdb, c.DocID)
+		go room.StartRedisLoop(context.Background(), rdb, c.DocID.String())
+		go room.StartRedisLoop(context.Background(), rdb, awarenessChannel(c.DocID))
 	}
 	h.Mu.Unlock()
 
@@ -90,12 +97,27 @@ func handleClient(h *hub.ServiceHub, c *hub.Client) {
 			break
 		}
 
-		if !c.CanEdit {
+		if len(message) == 0 {
 			continue
 		}
 
-		// PUBLISH to Redis: This makes the update visible to ALL servers
-		err = rdb.Publish(context.Background(), c.DocID.String(), message).Err()
+		channel := c.DocID.String()
+		switch message[0] {
+		case messageAwareness:
+			channel = awarenessChannel(c.DocID)
+		case messageDocumentUpdate:
+			if !c.CanEdit {
+				continue
+			}
+		default:
+			if !c.CanEdit {
+				continue
+			}
+			message = frameMessage(messageDocumentUpdate, message)
+		}
+
+		// PUBLISH to Redis: This makes the update visible to ALL servers.
+		err = rdb.Publish(context.Background(), channel, message).Err()
 		if err != nil {
 			log.Printf("redis publish failed for doc %s: %v", c.DocID, err)
 		}
@@ -210,13 +232,14 @@ func replayPersistedUpdates(c *hub.Client) {
 			log.Printf("failed to scan persisted update for doc %s: %v", c.DocID, err)
 			return
 		}
-		c.Send <- update
+		c.Send <- frameMessage(messageDocumentUpdate, update)
 		replayed++
 	}
 	if err := rows.Err(); err != nil {
 		log.Printf("failed while replaying persisted updates for doc %s: %v", c.DocID, err)
 	}
 	if replayed > 0 {
+		replayBufferedUpdates(c)
 		return
 	}
 
@@ -231,12 +254,41 @@ func replayPersistedUpdates(c *hub.Client) {
 		return
 	}
 	if len(snapshot) > 0 {
-		c.Send <- snapshot
+		c.Send <- frameMessage(messageDocumentUpdate, snapshot)
 	}
+
+	replayBufferedUpdates(c)
+}
+
+func replayBufferedUpdates(c *hub.Client) {
+	updates, err := rdb.LRange(context.Background(), "buffer:"+c.DocID.String(), 0, -1).Result()
+	if err != nil {
+		log.Printf("failed to load buffered updates for doc %s: %v", c.DocID, err)
+		return
+	}
+	for _, update := range updates {
+		if len(update) > 0 {
+			c.Send <- frameMessage(messageDocumentUpdate, []byte(update))
+		}
+	}
+}
+
+func awarenessChannel(docID uuid.UUID) string {
+	return docID.String() + ":awareness"
+}
+
+func frameMessage(messageType byte, payload []byte) []byte {
+	message := make([]byte, 1+len(payload))
+	message[0] = messageType
+	copy(message[1:], payload)
+	return message
 }
 
 // main configures the WebSocket route and starts the Echo HTTP server.
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found (or error loading it). Relying on system environment variables.")
+	}
 	e := echo.New()
 	serviceHub := hub.NewServiceHub()
 	rdb = cache.NewRedisClient()
