@@ -1,32 +1,49 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 
 type StatusPillProps = {
   status: "connected" | "connecting" | "offline" | "error";
 };
 
-const labels = {
+const labels: Record<StatusPillProps["status"], string> = {
   connected: "Live",
-  connecting: "Connecting",
+  connecting: "Syncing",
   offline: "Offline",
-  error: "Sync issue",
+  error: "Sync error",
 };
 
-const styles = {
-  connected: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  connecting: "border-amber-200 bg-amber-50 text-amber-700",
-  offline: "border-zinc-200 bg-zinc-50 text-zinc-500",
-  error: "border-red-200 bg-red-50 text-red-700",
+const styles: Record<StatusPillProps["status"], { pill: string; dot: string }> = {
+  connected: {
+    pill: "border-[#B8D8C8] bg-[#EDF6F1] text-[#2A6645]",
+    dot: "bg-[#3A9162] shadow-[0_0_0_3px_#B8D8C8]",
+  },
+  connecting: {
+    pill: "border-[#D9C8A0] bg-[#F8F3E6] text-[#7A5E1A]",
+    dot: "bg-[#B8860B] animate-pulse",
+  },
+  offline: {
+    pill: "border-[#DDD9D0] bg-[#F4F2EE] text-[#8C8680]",
+    dot: "bg-[#C4BFB5]",
+  },
+  error: {
+    pill: "border-[#E8C4B8] bg-[#FAF0EC] text-[#8C3A1A]",
+    dot: "bg-[#C4501A]",
+  },
 };
 
 export function StatusPill({ status }: StatusPillProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
-        styles[status],
+        "inline-flex h-7 items-center gap-2 rounded-full border px-3 text-xs font-medium tracking-wide",
+        styles[status].pill,
       )}
+      style={{ fontFamily: "var(--font-ui, var(--font-system-sans))" }}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      <span
+        className={cn("h-1.5 w-1.5 rounded-full shrink-0", styles[status].dot)}
+      />
       {labels[status]}
     </span>
   );

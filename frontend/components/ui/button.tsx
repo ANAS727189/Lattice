@@ -23,6 +23,7 @@ const sizes = {
 };
 
 export function Button({
+  children,
   className,
   variant = "secondary",
   size = "md",
@@ -37,6 +38,8 @@ export function Button({
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </button>
   );
 }
