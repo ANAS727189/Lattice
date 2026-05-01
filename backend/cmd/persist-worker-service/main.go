@@ -5,14 +5,21 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
+	"os"
+	"strconv"
+	"time"
+
 	"lattice/backend/internal/cache"
 	"lattice/backend/internal/database"
-	"log"
-	"time"
+
+	"github.com/joho/godotenv"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
+
+const messageDocumentUpdate byte = 0
 
 // Worker encapsulates the dependencies needed to consume Redis updates and
 // persist replayable document updates to the database.
@@ -25,6 +32,9 @@ type Worker struct {
 
 // main wires dependencies and starts the persistence loops.
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found (or error loading it). Relying on system environment variables.")
+	}
 	db, err := database.NewPostgresDB()
 	if err != nil {
 		log.Fatal(err)
@@ -61,6 +71,13 @@ func (w *Worker) listenAndStore() {
 			continue
 		}
 		updateData := []byte(msg.Payload)
+		if len(updateData) == 0 {
+			continue
+		}
+		if updateData[0] != messageDocumentUpdate {
+			continue
+		}
+		updateData = updateData[1:]
 
 		// Push update to a Redis List for this specific document
 		// This acts as our temporary buffer so we don't lose data
@@ -73,7 +90,7 @@ func (w *Worker) listenAndStore() {
 
 // startFlushTicker periodically flushes buffered updates to the database.
 func (w *Worker) startFlushTicker() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(flushInterval())
 	ctx := context.Background()
 
 	for range ticker.C {
@@ -87,6 +104,14 @@ func (w *Worker) startFlushTicker() {
 			w.flushToDB(docID)
 		}
 	}
+}
+
+func flushInterval() time.Duration {
+	seconds, err := strconv.Atoi(os.Getenv("PERSIST_FLUSH_SECONDS"))
+	if err != nil || seconds < 1 {
+		return 5 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 // flushToDB drains a document's buffered updates and writes them to the database.
