@@ -7,6 +7,8 @@ export type User = {
   created_at?: string;
 };
 
+export type PublicUser = Pick<User, "id" | "email" | "display_name">;
+
 export type DocumentSummary = {
   id: string;
   title: string;
@@ -20,6 +22,14 @@ export type DocumentRole = "owner" | "editor" | "viewer";
 export type DocumentDetail = {
   document: DocumentSummary;
   role: DocumentRole;
+};
+
+export type DocumentPermission = {
+  document_id: string;
+  user_id: string;
+  role: Exclude<DocumentRole, "owner">;
+  email: string;
+  display_name: string;
 };
 
 export type AuthMode = "login" | "register";
@@ -42,4 +52,16 @@ export type ProviderOptions = {
   token: string;
   doc: Y.Doc;
   onStatusChange: (status: SyncStatus) => void;
+};
+
+// Awareness Types
+export type CursorPosition = {
+  anchor: number;
+  head: number;
+};
+
+export type UserPresence = {
+  id: string;
+  name: string;
+  color: string;
 };
