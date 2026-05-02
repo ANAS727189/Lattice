@@ -1,0 +1,244 @@
+import type React from "react";
+import {
+  Bold,
+  Code2,
+  File,
+  Heading1,
+  Heading2,
+  Italic,
+  List,
+  ListOrdered,
+  Minus,
+  Monitor,
+  Pilcrow,
+  Quote,
+  Redo2,
+  Underline,
+  Undo2,
+} from "lucide-react";
+import { setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
+import { wrapInList } from "prosemirror-schema-list";
+import type { EditorState } from "prosemirror-state";
+import type { EditorView } from "prosemirror-view";
+import { redoCommand, undoCommand } from "y-prosemirror";
+import { StatusPill } from "@/components/ui/status-pill";
+import type { SyncStatus, UserPresence } from "@/types";
+import { PresenceStrip } from "@/components/editor/collab-editor/presence-strip";
+import { PAGE_METRICS, type PageLayout } from "@/components/editor/collab-editor/constants";
+import { editorSchema } from "@/components/editor/collab-editor/schema";
+import { cn } from "@/lib/utils";
+
+export type EditorCommand = (
+  state: EditorState,
+  dispatch?: EditorView["dispatch"]
+) => boolean;
+
+export function EditorToolbar({
+  readOnly,
+  pageLayout,
+  onPageLayoutChange,
+  onCommand,
+  onInsertHorizontalRule,
+  remotePresence,
+  status,
+}: {
+  readOnly: boolean;
+  pageLayout: PageLayout;
+  onPageLayoutChange: (layout: PageLayout) => void;
+  onCommand: (command: EditorCommand) => void;
+  onInsertHorizontalRule: () => void;
+  remotePresence: UserPresence[];
+  status: SyncStatus;
+}) {
+  return (
+    <div
+      className="relative z-10 flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-1.5"
+      style={{
+        background: "var(--surface)",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
+      <div className="flex flex-wrap items-center gap-0.5">
+        <ToolButton
+          label="Bold"
+          disabled={readOnly}
+          onClick={() => onCommand(toggleMark(editorSchema.marks.strong))}
+        >
+          <Bold className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Italic"
+          disabled={readOnly}
+          onClick={() => onCommand(toggleMark(editorSchema.marks.em))}
+        >
+          <Italic className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Underline"
+          disabled={readOnly}
+          onClick={() => onCommand(toggleMark(editorSchema.marks.underline))}
+        >
+          <Underline className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Inline code"
+          disabled={readOnly}
+          onClick={() => onCommand(toggleMark(editorSchema.marks.code))}
+        >
+          <Code2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <Divider />
+        <ToolButton
+          label="Paragraph"
+          disabled={readOnly}
+          onClick={() => onCommand(setBlockType(editorSchema.nodes.paragraph))}
+        >
+          <Pilcrow className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Heading 1"
+          disabled={readOnly}
+          onClick={() =>
+            onCommand(setBlockType(editorSchema.nodes.heading, { level: 1 }))
+          }
+        >
+          <Heading1 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Heading 2"
+          disabled={readOnly}
+          onClick={() =>
+            onCommand(setBlockType(editorSchema.nodes.heading, { level: 2 }))
+          }
+        >
+          <Heading2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Quote"
+          disabled={readOnly}
+          onClick={() => onCommand(wrapIn(editorSchema.nodes.blockquote))}
+        >
+          <Quote className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Code block"
+          disabled={readOnly}
+          onClick={() => onCommand(setBlockType(editorSchema.nodes.code_block))}
+        >
+          <Code2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <Divider />
+        <ToolButton
+          label="Bulleted list"
+          disabled={readOnly}
+          onClick={() => onCommand(wrapInList(editorSchema.nodes.bullet_list))}
+        >
+          <List className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Numbered list"
+          disabled={readOnly}
+          onClick={() => onCommand(wrapInList(editorSchema.nodes.ordered_list))}
+        >
+          <ListOrdered className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Divider"
+          disabled={readOnly}
+          onClick={onInsertHorizontalRule}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </ToolButton>
+        <Divider />
+        <ToolButton
+          label="Undo"
+          disabled={readOnly}
+          onClick={() => onCommand(undoCommand)}
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Redo"
+          disabled={readOnly}
+          onClick={() => onCommand(redoCommand)}
+        >
+          <Redo2 className="h-3.5 w-3.5" />
+        </ToolButton>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <PresenceStrip users={remotePresence} />
+        <div
+          className="flex items-center rounded-sm overflow-hidden"
+          style={{ border: "1px solid var(--border)" }}
+        >
+          {(["standard", "a4"] as PageLayout[]).map((layout) => (
+            <button
+              key={layout}
+              onClick={() => onPageLayoutChange(layout)}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-all"
+              style={{
+                background: pageLayout === layout ? "var(--ink)" : "transparent",
+                color: pageLayout === layout ? "var(--cream)" : "var(--ink-muted)",
+                borderRight: layout === "standard" ? "1px solid var(--border)" : undefined,
+              }}
+            >
+              {layout === "standard" ? (
+                <Monitor className="h-3 w-3" />
+              ) : (
+                <File className="h-3 w-3" />
+              )}
+              {PAGE_METRICS[layout].label}
+            </button>
+          ))}
+        </div>
+        <StatusPill status={status} />
+      </div>
+    </div>
+  );
+}
+
+function ToolButton({
+  label,
+  className,
+  onMouseDown,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onMouseDown?.(event);
+      }}
+      className={cn(
+        "h-7 w-7 flex items-center justify-center rounded-sm transition-colors",
+        className
+      )}
+      style={{
+        color: props.disabled ? "var(--ink-faint)" : "var(--ink-muted)",
+        background: "transparent",
+        cursor: props.disabled ? "not-allowed" : "pointer",
+        opacity: props.disabled ? 0.4 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!props.disabled) {
+          (e.currentTarget as HTMLButtonElement).style.background =
+            "var(--cream-dark)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--ink)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+        (e.currentTarget as HTMLButtonElement).style.color = "var(--ink-muted)";
+      }}
+      {...props}
+    />
+  );
+}
+
+function Divider() {
+  return <div className="mx-1 h-4 w-px" style={{ background: "var(--border)" }} />;
+}
