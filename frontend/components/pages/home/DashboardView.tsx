@@ -70,12 +70,19 @@ export function DashboardView() {
         }}
       >
         <div className="flex items-center gap-6">
-          <span
-            className="text-base font-medium"
-            style={{ fontFamily: "var(--font-display)", color: "var(--ink)" }}
-          >
-            Lattice
-          </span>
+          <div className="flex items-center gap-3">
+            <img
+              src="/favicon.ico"
+              alt="Lattice logo"
+              className="h-6 w-6"
+            />
+            <span
+              className="text-base font-medium"
+              style={{ fontFamily: "var(--font-display)", color: "var(--ink)" }}
+            >
+              Lattice
+            </span>
+          </div>
           <div className="hidden md:flex items-center relative">
             <Search
               className="absolute left-3 h-3.5 w-3.5"

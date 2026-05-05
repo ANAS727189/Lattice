@@ -42,8 +42,13 @@ export function LoginForm() {
     <div className="flex flex-1 flex-col justify-center px-8 sm:px-16 lg:px-20">
       <button
         onClick={() => router.push("/")}
-        className="flex lg:hidden items-center mb-12"
+        className="flex lg:hidden items-center gap-3 mb-12"
       >
+        <img
+          src="/favicon.ico"
+          alt="Lattice logo"
+          className="h-7 w-7"
+        />
         <span
           className="text-xl font-medium"
           style={{

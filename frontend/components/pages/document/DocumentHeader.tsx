@@ -29,14 +29,19 @@ export function DocumentHeader({
       <div className="flex items-center gap-4 min-w-0">
         <Link
           href="/"
-          className="shrink-0 transition-opacity hover:opacity-60"
+          className="shrink-0 transition-opacity hover:opacity-60 flex items-center gap-2"
           style={{ color: "var(--ink)" }}
         >
+          <img
+            src="/favicon.ico"
+            alt="Lattice logo"
+            className="h-6 w-6"
+          />
           <span
             className="text-base font-medium"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            L
+            Lattice
           </span>
         </Link>
         <span style={{ color: "var(--border)", userSelect: "none" }}>/</span>

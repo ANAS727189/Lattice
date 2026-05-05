@@ -20,8 +20,13 @@ export function BrandPanel() {
 
       <button
         onClick={() => router.push("/")}
-        className="relative z-10 flex items-center gap-0 w-fit"
+        className="relative z-10 flex items-center gap-3 w-fit"
       >
+        <img
+          src="/favicon.ico"
+          alt="Lattice logo"
+          className="h-7 w-7"
+        />
         <span
           className="text-xl font-medium tracking-tight"
           style={{

@@ -10,6 +10,11 @@ export function LandingView() {
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div className="flex items-center gap-3">
+          <img
+            src="/favicon.ico"
+            alt="Lattice logo"
+            className="h-7 w-7"
+          />
           <span
             className="text-lg font-medium tracking-tight"
             style={{ fontFamily: "var(--font-display)", color: "var(--ink)" }}
