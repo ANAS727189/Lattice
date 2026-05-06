@@ -69,44 +69,63 @@ From the backend directory:
 
 ```bash
 cd backend
-export JWT_SECRET=dev-secret-change-me
-
-docker compose -f deployments/docker-compose.yaml up --build
+docker compose --env-file ./.env -f deployments/docker-compose.yaml up --build
 ```
 
-This will start PostgreSQL, Redis, MinIO, all backend services, and the frontend.
+Then open:
 
-### Option B: Run services locally
+- Frontend: http://localhost:3000
+- API health: http://localhost:8080/health
+- Doc service Swagger: http://localhost:8081/swagger/index.html
 
-1. Start PostgreSQL and Redis (via Docker or local installs).
-2. Set environment variables:
+### Option B: Makefile (Docker stack)
+
+From the repo root:
 
 ```bash
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_USER=lattice
-export DB_PASSWORD=lattice
-export DB_NAME=lattice
-export REDIS_ADDR=localhost:6379
-export JWT_SECRET=dev-secret-change-me
-export PERSIST_FLUSH_SECONDS=5
+make infra-up
 ```
 
-3. Run backend services (in separate terminals):
+Stop the stack:
+
+```bash
+make infra-down
+```
+
+Clean volumes:
+
+```bash
+make infra-clean
+```
+
+### Option C: Local services with Air (no Docker)
+
+1. Create `backend/.env.local` with host-based settings:
+
+```bash
+DATABASE_URL=postgres://lattice_user:lattice@localhost:5432/lattice?sslmode=disable
+DB_USER=lattice_user
+DB_HOST=localhost
+DB_PASSWORD=lattice
+DB_PORT=5432
+DB_NAME=lattice
+REDIS_ADDR=localhost:6379
+JWT_SECRET=lattice_secret
+```
+
+2. Load the env file and run services:
 
 ```bash
 cd backend
+set -a && source .env.local && set +a
 
-go run ./cmd/api-gateway-service
-
-go run ./cmd/doc-service
-
-go run ./cmd/sync-service
-
-go run ./cmd/persist-worker-service
+make run-api
+make run-doc
+make run-sync
+make run-worker
 ```
 
-4. Run the frontend:
+3. Frontend (separate terminal):
 
 ```bash
 cd frontend
@@ -116,7 +135,7 @@ npm run dev
 
 ### Frontend Environment
 
-The frontend expects these variables (set in `frontend/.env.local` or shell):
+The frontend uses these env vars when running locally:
 
 - `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8080`)
 - `NEXT_PUBLIC_DOCS_BASE_URL` (default `http://localhost:8081`)

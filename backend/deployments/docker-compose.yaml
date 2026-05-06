@@ -2,10 +2,17 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: lattice_postgres
+    env_file:
+      - ../.env
     environment:
-      POSTGRES_USER: lattice
-      POSTGRES_PASSWORD: lattice
-      POSTGRES_DB: lattice
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     ports:
       - "5432:5432"
     volumes:
@@ -21,34 +28,17 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  minio:
-    image: minio/minio
-    container_name: lattice_minio
-    environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password123
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-    restart: unless-stopped
 
   api-gateway:
     build:
       context: ..
       dockerfile: deployments/Dockerfile.api
     container_name: lattice_api_gateway
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_USER: lattice
-      DB_PASSWORD: lattice
-      DB_NAME: lattice
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    env_file:
+      - ../.env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -58,15 +48,11 @@ services:
       context: ..
       dockerfile: deployments/Dockerfile.doc
     container_name: lattice_doc_service
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_USER: lattice
-      DB_PASSWORD: lattice
-      DB_NAME: lattice
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    env_file:
+      - ../.env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8081:8081"
     restart: unless-stopped
@@ -76,17 +62,13 @@ services:
       context: ..
       dockerfile: deployments/Dockerfile.sync
     container_name: lattice_sync_service
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_USER: lattice
-      DB_PASSWORD: lattice
-      DB_NAME: lattice
-      REDIS_ADDR: redis:6379
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    env_file:
+      - ../.env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - "8082:8082"
     restart: unless-stopped
@@ -96,16 +78,13 @@ services:
       context: ..
       dockerfile: deployments/Dockerfile.persist-worker
     container_name: lattice_persist_worker
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_USER: lattice
-      DB_PASSWORD: lattice
-      DB_NAME: lattice
-      REDIS_ADDR: redis:6379
+    env_file:
+      - ../.env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
@@ -113,14 +92,12 @@ services:
       context: ../../frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
-        NEXT_PUBLIC_DOCS_BASE_URL: http://localhost:8081
-        NEXT_PUBLIC_SYNC_BASE_URL: ws://localhost:8082
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_DOCS_BASE_URL: ${NEXT_PUBLIC_DOCS_BASE_URL}
+        NEXT_PUBLIC_SYNC_BASE_URL: ${NEXT_PUBLIC_SYNC_BASE_URL}
     container_name: lattice_frontend
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
-      NEXT_PUBLIC_DOCS_BASE_URL: http://localhost:8081
-      NEXT_PUBLIC_SYNC_BASE_URL: ws://localhost:8082
+    env_file:
+      - ../.env
     depends_on:
       - api-gateway
       - doc-service
@@ -132,4 +109,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  minio_data:

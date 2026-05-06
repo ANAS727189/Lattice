@@ -4,7 +4,7 @@ IMAGE_TAG ?= v1.0.0
 GO ?= /usr/local/go/bin/go
 
 # .PHONY tells Make that these aren't real files
-.PHONY: infra-up infra-down infra-clean run-api run-sync run-client fmt tidy docker-build docker-push
+.PHONY: infra-up infra-down infra-clean run-all run-api run-doc run-sync run-worker run-frontend fmt tidy docker-build docker-push
 
 # ==============================================================================
 # Local Development (Fast Iteration)
@@ -12,23 +12,36 @@ GO ?= /usr/local/go/bin/go
 
 # Start databases in the background
 infra-up:
-	docker compose -f backend/deployments/docker-compose.yaml up -d
+	docker compose --env-file backend/.env -f backend/deployments/docker-compose.yaml up -d
 
 infra-down:
-	docker compose -f backend/deployments/docker-compose.yaml down
+	docker compose --env-file backend/.env -f backend/deployments/docker-compose.yaml down
 
 infra-clean:
-	docker compose -f backend/deployments/docker-compose.yaml down -v --remove-orphans
+	docker compose --env-file backend/.env -f backend/deployments/docker-compose.yaml down -v --remove-orphans
 
 # Run microservices with hot-reload (Air)
 run-api:
 	cd backend && air -c .air.api.toml
 
+run-doc:
+	cd backend && air -c .air.doc.toml
+
 run-sync:
 	cd backend && air -c .air.sync.toml
 
-run-client:
-	cd client && npm run dev
+run-worker:
+	cd backend && air -c .air.persist-worker.toml
+
+run-frontend:
+	cd frontend && npm run dev
+
+# Run all backend services (requires Air configs)
+run-all:
+	$(MAKE) run-api &
+	$(MAKE) run-doc &
+	$(MAKE) run-sync &
+	$(MAKE) run-worker
 
 # ==============================================================================
 # Cloud Deployment (Docker Builds & Push)

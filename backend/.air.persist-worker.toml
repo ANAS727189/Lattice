@@ -1,0 +1,17 @@
+# Config file for Air to run the Persistence Worker
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Compile the persistence worker binary
+cmd = "/usr/local/go/bin/go build -o ./tmp/persist-worker ./cmd/persist-worker-service"
+# Run the compiled binary
+bin = "./tmp/persist-worker"
+# Watch for changes in these directories
+include_dir = ["cmd", "internal", "pkg", "tools"]
+exclude_dir = ["assets", "tmp", "vendor", "deployments"]
+delay = 1000
+kill_delay = 500
+
+[log]
+time = true

@@ -1,0 +1,17 @@
+# Config file for Air to run the Document Service
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Compile the Document Service binary
+cmd = "/usr/local/go/bin/go build -o ./tmp/doc-server ./cmd/doc-service"
+# Run the compiled binary
+bin = "./tmp/doc-server"
+# Watch for changes in these directories
+include_dir = ["cmd", "internal", "pkg"]
+exclude_dir = ["assets", "tmp", "vendor", "deployments"]
+delay = 1000
+kill_delay = 500
+
+[log]
+time = true
