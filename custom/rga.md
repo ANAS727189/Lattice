@@ -1,8 +1,6 @@
+# Collaborative Systems
+
 This is a comprehensive technical guide documenting the transition from high-level real-time collaboration to the low-level mathematical implementation of **RGA (Replicated Growable Array)**.
-
----
-
-# Collaborative Systems: From Concept to CRDT
 
 ## 1. The Core Problem: The Distributed Consensus
 In a single-user application, the "state" is absolute. In a collaborative application, the state is **fragmented**. If two users edit the same piece of data at the same time, how do we ensure they don't end up with different versions of the truth?
