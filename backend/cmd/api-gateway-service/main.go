@@ -19,6 +19,8 @@ import (
 	appmiddleware "lattice/backend/internal/middleware"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -36,7 +38,7 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: allowedOrigins(),
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
@@ -69,4 +71,23 @@ func main() {
 	if err := e.Start(":8080"); err != nil {
 		e.Logger.Error(err.Error())
 	}
+}
+
+func allowedOrigins() []string {
+	value := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS"))
+	if value == "" {
+		return []string{"http://localhost:3000"}
+	}
+	parts := strings.Split(value, ",")
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		origin := strings.TrimSpace(part)
+		if origin != "" {
+			origins = append(origins, origin)
+		}
+	}
+	if len(origins) == 0 {
+		return []string{"http://localhost:3000"}
+	}
+	return origins
 }
