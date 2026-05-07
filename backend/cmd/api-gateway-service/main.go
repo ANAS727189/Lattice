@@ -56,6 +56,10 @@ func main() {
 	e.POST("/register", h.Register)
 	e.POST("/login", h.Login)
 	e.GET("/me", h.Me, appmiddleware.JWTMiddleware)
+	// Support PATCH for clients that send partial updates.
+	e.PATCH("/me", h.UpdateMe, appmiddleware.JWTMiddleware)
+	// Some proxies/clients may convert PATCH to PUT; accept PUT as a fallback.
+	e.PUT("/me", h.UpdateMe, appmiddleware.JWTMiddleware)
 	e.GET("/users/search", h.SearchUsers, appmiddleware.JWTMiddleware)
 
 	// Swagger UI: /swagger/index.html

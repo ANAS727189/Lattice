@@ -90,6 +90,32 @@ export function DashboardView() {
       />
 
       <main className="max-w-6xl mx-auto px-6 py-10">
+        <section className="md:hidden mb-8">
+          <p
+            className="text-xs font-medium uppercase tracking-widest mb-3"
+            style={{ color: "var(--ink-faint)" }}
+          >
+            Search
+          </p>
+          <input
+            className="w-full px-4 h-10 text-sm rounded-sm outline-none transition-all"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--ink)",
+            }}
+            placeholder="Search documents…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "var(--ink-faint)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+          />
+        </section>
+
         <section className="mb-10">
           <p
             className="text-xs font-medium uppercase tracking-widest mb-5"
@@ -149,7 +175,14 @@ export function DashboardView() {
               >
                 Recent documents
               </p>
-             
+
+              <p className="text-sm mt-2" style={{ color: "var(--ink-muted)" }}>
+                {loading
+                  ? "Fetching your workspace…"
+                  : filteredDocs.length === 0
+                  ? "Create a document to start collaborating."
+                  : "Pick up where you left off."}
+              </p>
             </div>
              <p className="text-sm" style={{ color: "var(--ink-muted)" }}>
                 {filteredDocs.length === 0
@@ -193,6 +226,31 @@ export function DashboardView() {
               <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
                 Create your first document above
               </p>
+
+
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (!token) return;
+                  setBusy(true);
+                  createDocument(token, "Untitled")
+                    .then((document) => router.push(`/d/${document.id}`))
+                    .catch((caught) => console.error(caught))
+                    .finally(() => setBusy(false));
+                }}
+                className="mt-6 inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-sm transition-colors"
+                style={{
+                  background: busy ? "var(--ink-muted)" : "var(--ink)",
+                  color: "var(--cream)",
+                  border: "1px solid var(--ink)",
+                  cursor: busy ? "not-allowed" : "pointer",
+                  opacity: busy ? 0.85 : 1,
+                }}
+              >
+                <Plus className="h-4 w-4" style={{ color: "var(--cream)" }} />
+                Create a document
+              </button>
             </div>
           ) : (
             <div>

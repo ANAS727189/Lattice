@@ -2,9 +2,12 @@ import type React from "react";
 import {
   Bold,
   Code2,
+  Eraser,
   File,
   Heading1,
   Heading2,
+  IndentDecrease,
+  IndentIncrease,
   Italic,
   List,
   ListOrdered,
@@ -13,11 +16,12 @@ import {
   Pilcrow,
   Quote,
   Redo2,
+  Strikethrough,
   Underline,
   Undo2,
 } from "lucide-react";
 import { setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
-import { wrapInList } from "prosemirror-schema-list";
+import { liftListItem, sinkListItem, wrapInList } from "prosemirror-schema-list";
 import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import { redoCommand, undoCommand } from "y-prosemirror";
@@ -32,6 +36,27 @@ export type EditorCommand = (
   state: EditorState,
   dispatch?: EditorView["dispatch"]
 ) => boolean;
+
+function clearFormattingCommand(state: EditorState, dispatch?: EditorView["dispatch"]) {
+  const { from, to, empty } = state.selection;
+  if (!dispatch) {
+    return true;
+  }
+
+  let tr = state.tr;
+  if (empty) {
+    // Remove any stored marks so the next typed text is unformatted.
+    dispatch(tr.setStoredMarks([]));
+    return true;
+  }
+
+  // Remove all marks from the current selection.
+  tr = tr.removeMark(from, to);
+  // Also clear stored marks so formatting doesn't re-apply after selection changes.
+  tr = tr.setStoredMarks([]);
+  dispatch(tr.scrollIntoView());
+  return true;
+}
 
 export function EditorToolbar({
   readOnly,
@@ -81,11 +106,25 @@ export function EditorToolbar({
           <Underline className="h-3.5 w-3.5" />
         </ToolButton>
         <ToolButton
+          label="Strikethrough"
+          disabled={readOnly}
+          onClick={() => onCommand(toggleMark(editorSchema.marks.strike))}
+        >
+          <Strikethrough className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
           label="Inline code"
           disabled={readOnly}
           onClick={() => onCommand(toggleMark(editorSchema.marks.code))}
         >
           <Code2 className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Clear formatting"
+          disabled={readOnly}
+          onClick={() => onCommand(clearFormattingCommand)}
+        >
+          <Eraser className="h-3.5 w-3.5" />
         </ToolButton>
         <Divider />
         <ToolButton
@@ -141,6 +180,20 @@ export function EditorToolbar({
           onClick={() => onCommand(wrapInList(editorSchema.nodes.ordered_list))}
         >
           <ListOrdered className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Indent"
+          disabled={readOnly}
+          onClick={() => onCommand(sinkListItem(editorSchema.nodes.list_item))}
+        >
+          <IndentIncrease className="h-3.5 w-3.5" />
+        </ToolButton>
+        <ToolButton
+          label="Outdent"
+          disabled={readOnly}
+          onClick={() => onCommand(liftListItem(editorSchema.nodes.list_item))}
+        >
+          <IndentDecrease className="h-3.5 w-3.5" />
         </ToolButton>
         <ToolButton
           label="Divider"

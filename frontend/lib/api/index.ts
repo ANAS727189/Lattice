@@ -66,6 +66,15 @@ export async function getCurrentUser(token: string): Promise<User> {
   return parseResponse<User>(response);
 }
 
+export async function updateCurrentUser(token: string, displayName: string): Promise<User> {
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ display_name: displayName }),
+  });
+  return parseResponse<User>(response);
+}
+
 export async function searchUsers(token: string, query: string): Promise<PublicUser[]> {
   const response = await fetch(`${API_BASE_URL}/users/search?q=${encodeURIComponent(query)}`, {
     headers: authHeaders(token),

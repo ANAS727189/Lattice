@@ -40,6 +40,48 @@ func (h *AuthHandler) Me(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+// UpdateMe updates the authenticated user's profile.
+//
+// Currently supports updating the display name.
+func (h *AuthHandler) UpdateMe(c echo.Context) error {
+	userID, ok := c.Get("user_id").(uuid.UUID)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing user context"})
+	}
+
+	r := new(UpdateMeRequest)
+	if err := c.Bind(r); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
+	}
+
+	displayName := strings.TrimSpace(r.DisplayName)
+	if displayName == "" {
+		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "display name is required"})
+	}
+	if len(displayName) > 80 {
+		return c.JSON(http.StatusBadRequest, ErrorResponse{Error: "display name is too long"})
+	}
+
+	var user models.User
+	err := h.DB.QueryRowContext(
+		c.Request().Context(),
+		`UPDATE users
+		 SET display_name = $1
+		 WHERE id = $2
+		 RETURNING id, email, display_name, created_at`,
+		displayName,
+		userID,
+	).Scan(&user.ID, &user.Email, &user.DisplayName, &user.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusNotFound, ErrorResponse{Error: "user not found"})
+		}
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "could not update profile"})
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
 // SearchUsers returns users whose email or display name matches the query.
 func (h *AuthHandler) SearchUsers(c echo.Context) error {
 	if _, ok := c.Get("user_id").(uuid.UUID); !ok {
@@ -100,6 +142,11 @@ type LoginRequest struct {
 // TokenResponse is returned on successful login.
 type TokenResponse struct {
 	Token string `json:"token"`
+}
+
+// UpdateMeRequest is the request payload for UpdateMe.
+type UpdateMeRequest struct {
+	DisplayName string `json:"display_name" example:"Ada Lovelace"`
 }
 
 // Register creates a new user account.

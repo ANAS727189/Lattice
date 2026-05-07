@@ -100,8 +100,10 @@ export function Navbar(props: NavbarProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div
-          className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold"
+        <Link
+          href="/profile"
+          title="Profile"
+          className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold transition-opacity"
           style={{
             background: "var(--ink)",
             color: "var(--cream)",
@@ -109,7 +111,7 @@ export function Navbar(props: NavbarProps) {
           }}
         >
           A
-        </div>
+        </Link>
         <button
           title="Sign out"
           onClick={props.onLogout}
