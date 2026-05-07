@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -49,9 +50,26 @@ func main() {
 	// This worker subscribes to a special "persistence" channel
 	// or listens to all document channels via Pattern Subscribe
 	go worker.listenAndStore()
+	go startHealthServer()
 
 	// Keep the worker running forever
 	select {}
+}
+
+func startHealthServer() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Printf("health server stopped: %v", err)
+	}
 }
 
 // listenAndStore subscribes to all channels and buffers incoming updates in Redis.
