@@ -26,6 +26,8 @@ type DashboardNavbarProps = {
   query: string;
   onQueryChange: (value: string) => void;
   onLogout: () => void;
+  profileName: string;
+  profileEmail: string;
 };
 
 type NavbarProps = LandingNavbarProps | DashboardNavbarProps;
@@ -110,7 +112,7 @@ export function Navbar(props: NavbarProps) {
             fontFamily: "var(--font-ui)",
           }}
         >
-          A
+          {getProfileInitial(props.profileName, props.profileEmail)}
         </Link>
         <button
           title="Sign out"
@@ -134,4 +136,12 @@ export function Navbar(props: NavbarProps) {
       </div>
     </header>
   );
+}
+
+function getProfileInitial(name: string, email: string) {
+  const source = name.trim() || email.trim();
+  if (!source) {
+    return "?";
+  }
+  return source[0].toUpperCase();
 }

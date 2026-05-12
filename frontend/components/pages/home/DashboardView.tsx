@@ -4,9 +4,9 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus, FileText, PenLine, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ApiError, createDocument, listDocuments } from "@/lib/api";
+import { ApiError, createDocument, getCurrentUser, listDocuments } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import type { DocumentSummary } from "@/types";
+import type { DocumentSummary, User } from "@/types";
 import { Navbar } from "@/components/layout/Navbar";
 
 export function DashboardView() {
@@ -15,6 +15,7 @@ export function DashboardView() {
   const logout = useAuthStore((state) => state.logout);
 
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -25,7 +26,11 @@ export function DashboardView() {
     if (!token) return;
     async function loadDocs() {
       try {
-        const nextDocuments = await listDocuments(token);
+        const [me, nextDocuments] = await Promise.all([
+          getCurrentUser(token),
+          listDocuments(token),
+        ]);
+        setCurrentUser(me);
         setDocuments(nextDocuments);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -87,6 +92,8 @@ export function DashboardView() {
           logout();
           router.push("/");
         }}
+        profileName={currentUser?.display_name ?? ""}
+        profileEmail={currentUser?.email ?? ""}
       />
 
       <main className="max-w-6xl mx-auto px-6 py-10">
