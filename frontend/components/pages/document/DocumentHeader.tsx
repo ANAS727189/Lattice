@@ -71,16 +71,16 @@ export function DocumentHeader({
         <span style={{ color: "var(--border)", userSelect: "none" }}>/</span>
         <div className="relative min-w-0">
           <button
-            className="group flex items-center gap-2 min-w-0 rounded-sm transition-all"
+            className="group hover:cursor-pointer flex items-center gap-2 min-w-0 rounded-sm transition-all"
             onClick={() => onRenameOpenChange(true)}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                "var(--cream-dark)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                "transparent";
-            }}
+            // onMouseEnter={(e) => {
+            //   (e.currentTarget as HTMLButtonElement).style.background =
+            //     "var(--cream-dark)";
+            // }}
+            // onMouseLeave={(e) => {
+            //   (e.currentTarget as HTMLButtonElement).style.background =
+            //     "transparent";
+            // }}
           >
             <h1
               className="truncate text-sm font-medium transition-colors"
