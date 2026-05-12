@@ -121,6 +121,12 @@ func handleClient(h *hub.ServiceHub, c *hub.Client) {
 		if err != nil {
 			log.Printf("redis publish failed for doc %s: %v", c.DocID, err)
 		}
+
+		if message[0] == messageDocumentUpdate {
+			if err := persistDocumentUpdate(context.Background(), c.DocID, message[1:]); err != nil {
+				log.Printf("failed to persist update for doc %s: %v", c.DocID, err)
+			}
+		}
 	}
 }
 
@@ -282,6 +288,37 @@ func frameMessage(messageType byte, payload []byte) []byte {
 	message[0] = messageType
 	copy(message[1:], payload)
 	return message
+}
+
+func persistDocumentUpdate(ctx context.Context, docID uuid.UUID, update []byte) error {
+	if len(update) == 0 {
+		return nil
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(
+		ctx,
+		`INSERT INTO document_updates (document_id, update_data) VALUES ($1, $2)`,
+		docID,
+		update,
+	); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(
+		ctx,
+		`UPDATE documents SET updated_at = NOW() WHERE id = $1`,
+		docID,
+	); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // main configures the WebSocket route and starts the Echo HTTP server.

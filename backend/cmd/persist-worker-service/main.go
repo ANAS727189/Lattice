@@ -1,5 +1,6 @@
-// Command persist-worker-service runs a background worker that persists document
-// updates from Redis into the database.
+// Command persist-worker-service exposes a lightweight health endpoint.
+//
+// Document persistence now happens directly in sync-service.
 package main
 
 import (
@@ -11,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"lattice/backend/internal/cache"
 	"lattice/backend/internal/database"
 
 	"github.com/joho/godotenv"
@@ -44,12 +44,7 @@ func main() {
 	if err := database.EnsureSchema(context.Background(), db); err != nil {
 		log.Fatal(err)
 	}
-	rdb := cache.NewRedisClient()
-	worker := &Worker{DB: db, RDB: rdb}
 
-	// This worker subscribes to a special "persistence" channel
-	// or listens to all document channels via Pattern Subscribe
-	go worker.listenAndStore()
 	go startHealthServer()
 
 	// Keep the worker running forever
