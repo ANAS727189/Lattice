@@ -36,6 +36,7 @@ export default function DocumentPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<DocumentPermission[]>([]);
   const [shareOpen, setShareOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const [inviteQuery, setInviteQuery] = useState("");
   const [inviteRole, setInviteRole] = useState<"viewer" | "editor">("editor");
   const [userResults, setUserResults] = useState<PublicUser[]>([]);
@@ -75,14 +76,12 @@ export default function DocumentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token]);
 
-  async function handleRename() {
+  async function handleRename(title: string) {
     if (!detail) return;
-    const title = window.prompt("Rename document", detail.document.title);
-    if (!title?.trim() || title === detail.document.title) return;
 
     setBusy(true);
     try {
-      const updated = await updateDocumentTitle(token, id, title.trim());
+      const updated = await updateDocumentTitle(token, id, title);
       setDetail({ ...detail, document: updated });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Rename failed");
@@ -202,6 +201,8 @@ export default function DocumentPage() {
         onShareOpen={() => setShareOpen(true)}
         onDelete={handleDelete}
         onRename={handleRename}
+        renameOpen={renameOpen}
+        onRenameOpenChange={setRenameOpen}
       />
 
       {/* Editor */}
