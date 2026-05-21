@@ -21,6 +21,15 @@ Lattice is a real-time collaborative document editor built with a Go microservic
 ![Home](frontend/public/app/home-page.png)
 ![Editor](frontend/public/app/editor-screen.png)
 
+
+## Demo
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=5Hfb8S4qCFI">
+    <img src="https://img.youtube.com/vi/5Hfb8S4qCFI/maxresdefault.jpg" width="80%">
+  </a>
+</p>
+
 ## Architecture
 
 Lattice is split into a set of focused services that scale independently. The real-time sync service manages WebSocket connections, while a background worker persists CRDT updates and compacted snapshots.
