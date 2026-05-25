@@ -36,11 +36,11 @@ export function Navbar(props: NavbarProps) {
   if (props.variant === "landing") {
     return (
       <header
-        className={`flex h-16 items-center justify-between px-8 ${props.className ?? ""}`.trim()}
+        className={`flex h-16 items-center justify-between gap-4 px-4 sm:px-8 ${props.className ?? ""}`.trim()}
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         {logo}
-        <div className="flex items-center gap-6">
+        <div className="flex shrink-0 items-center gap-4 sm:gap-6">
           <Link
             href="/login"
             className="text-sm transition-colors"
@@ -50,7 +50,7 @@ export function Navbar(props: NavbarProps) {
           </Link>
           <Link
             href="/login"
-            className="inline-flex h-9 items-center px-5 text-sm font-medium transition-all rounded-sm"
+            className="hidden h-9 items-center rounded-sm px-5 text-sm font-medium transition-all sm:inline-flex"
             style={{
               background: "var(--ink)",
               color: "var(--cream)",
