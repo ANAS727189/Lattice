@@ -77,13 +77,13 @@ export function EditorToolbar({
 }) {
   return (
     <div
-      className="relative z-10 flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-1.5"
+      className="relative z-10 flex min-h-11 shrink-0 flex-col items-stretch gap-1.5 px-2 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:px-4"
       style={{
         background: "var(--surface)",
         borderBottom: "1px solid var(--border)",
       }}
     >
-      <div className="flex flex-wrap items-center gap-0.5">
+      <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto overscroll-x-contain pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
         <ToolButton
           label="Bold"
           disabled={readOnly}
@@ -219,17 +219,19 @@ export function EditorToolbar({
         </ToolButton>
       </div>
 
-      <div className="flex items-center gap-3">
-        <PresenceStrip users={remotePresence} />
+      <div className="flex min-w-0 items-center justify-between gap-2 sm:justify-end sm:gap-3">
+        <div className="min-w-0 overflow-hidden">
+          <PresenceStrip users={remotePresence} />
+        </div>
         <div
-          className="flex items-center rounded-sm overflow-hidden"
+          className="flex shrink-0 items-center overflow-hidden rounded-sm"
           style={{ border: "1px solid var(--border)" }}
         >
           {(["standard", "a4"] as PageLayout[]).map((layout) => (
             <button
               key={layout}
               onClick={() => onPageLayoutChange(layout)}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium transition-all min-[420px]:px-2.5"
               style={{
                 background: pageLayout === layout ? "var(--ink)" : "transparent",
                 color: pageLayout === layout ? "var(--cream)" : "var(--ink-muted)",
@@ -241,7 +243,9 @@ export function EditorToolbar({
               ) : (
                 <File className="h-3 w-3" />
               )}
-              {PAGE_METRICS[layout].label}
+              <span className="hidden min-[420px]:inline">
+                {PAGE_METRICS[layout].label}
+              </span>
             </button>
           ))}
         </div>
@@ -267,7 +271,7 @@ function ToolButton({
         onMouseDown?.(event);
       }}
       className={cn(
-        "h-7 w-7 flex items-center justify-center rounded-sm transition-colors",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-sm transition-colors sm:h-7 sm:w-7",
         className
       )}
       style={{
@@ -293,5 +297,5 @@ function ToolButton({
 }
 
 function Divider() {
-  return <div className="mx-1 h-4 w-px" style={{ background: "var(--border)" }} />;
+  return <div className="mx-1 h-4 w-px shrink-0" style={{ background: "var(--border)" }} />;
 }

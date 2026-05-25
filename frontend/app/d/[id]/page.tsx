@@ -191,7 +191,7 @@ export default function DocumentPage() {
 
   return (
     <div
-      className="flex h-screen flex-col"
+      className="flex h-dvh min-h-0 flex-col"
       style={{ background: "var(--cream)" }}
     >
       <DocumentHeader

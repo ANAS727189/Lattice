@@ -43,17 +43,17 @@ export function DocumentHeader({
 
   return (
     <header
-      className="relative flex h-13 shrink-0 items-center justify-between px-5"
+      className="relative flex h-13 shrink-0 items-center justify-between gap-2 px-3 sm:px-5"
       style={{
         background: "var(--surface)",
         borderBottom: "1px solid var(--border)",
         minHeight: "52px",
       }}
     >
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <Link
           href="/"
-          className="shrink-0 transition-opacity hover:opacity-60 flex items-center gap-2"
+          className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-60"
           style={{ color: "var(--ink)" }}
         >
           <img
@@ -62,16 +62,16 @@ export function DocumentHeader({
             className="h-6 w-6"
           />
           <span
-            className="text-base font-medium"
+            className="hidden text-base font-medium min-[380px]:inline"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Lattice
           </span>
         </Link>
-        <span style={{ color: "var(--border)", userSelect: "none" }}>/</span>
+        <span className="hidden sm:inline" style={{ color: "var(--border)", userSelect: "none" }}>/</span>
         <div className="relative min-w-0">
           <button
-            className="group hover:cursor-pointer flex items-center gap-2 min-w-0 rounded-sm transition-all"
+            className="group flex min-w-0 items-center gap-2 rounded-sm transition-all hover:cursor-pointer"
             onClick={() => onRenameOpenChange(true)}
             // onMouseEnter={(e) => {
             //   (e.currentTarget as HTMLButtonElement).style.background =
@@ -83,13 +83,13 @@ export function DocumentHeader({
             // }}
           >
             <h1
-              className="truncate text-sm font-medium transition-colors"
-              style={{ color: "var(--ink)", maxWidth: 260 }}
+              className="max-w-[34vw] truncate text-sm font-medium transition-colors sm:max-w-[260px]"
+              style={{ color: "var(--ink)" }}
             >
               {detail.document.title}
             </h1>
             <span
-              className="text-xs shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="hidden shrink-0 text-xs opacity-0 transition-opacity group-hover:opacity-100 md:inline"
               style={{ color: "var(--ink-faint)" }}
             >
               Rename
@@ -97,7 +97,7 @@ export function DocumentHeader({
           </button>
 
           <div
-            className={`absolute left-0 top-full z-20 mt-2 w-[20rem] rounded-sm border transition-all duration-200 ${
+            className={`fixed left-3 right-3 top-14 z-20 mt-2 rounded-sm border transition-all duration-200 sm:absolute sm:left-0 sm:right-auto sm:top-full sm:w-[20rem] ${
               renameOpen
                 ? "pointer-events-auto translate-y-0 opacity-100"
                 : "pointer-events-none -translate-y-1 opacity-0"
@@ -139,7 +139,7 @@ export function DocumentHeader({
                   fontFamily: "inherit",
                 }}
               />
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-xs" style={{ color: "var(--ink-faint)" }}>
                   Press Enter to save
                 </span>
@@ -191,7 +191,7 @@ export function DocumentHeader({
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onShareOpen}
-          className="inline-flex items-center gap-1.5 h-8 px-4 text-xs font-medium rounded-sm transition-all"
+          className="inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-all sm:px-4"
           style={{
             background: "var(--ink)",
             color: "var(--cream)",
@@ -206,7 +206,7 @@ export function DocumentHeader({
           }}
         >
           <Share2 className="h-3.5 w-3.5" />
-          Share
+          <span className="hidden sm:inline">Share</span>
         </button>
 
         {detail.role === "owner" && (

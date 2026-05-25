@@ -163,7 +163,7 @@ export function CollabEditor({ docId, token, role, currentUser }: CollabEditorPr
 
   return (
     <section
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
       style={{ background: "var(--cream)" }}
     >
       <EditorToolbar
@@ -179,7 +179,7 @@ export function CollabEditor({ docId, token, role, currentUser }: CollabEditorPr
       <div
         ref={scrollRef}
         onScroll={updatePageStats}
-        className="relative min-h-0 flex-1 overflow-auto"
+        className="relative min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain"
         style={{ background: "#E8E4DC" }}
       >
         <PageIndicator pageLayout={pageLayout} pageStats={pageStats} />

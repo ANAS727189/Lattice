@@ -35,14 +35,14 @@ export function ShareModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-16"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 py-6 sm:px-4 sm:pt-16"
       style={{ background: "rgba(26,23,20,0.4)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="w-full max-w-md rounded-sm overflow-hidden"
+        className="max-h-[calc(100dvh-3rem)] w-full max-w-md overflow-y-auto rounded-sm"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
@@ -90,7 +90,7 @@ export function ShareModal({
         <div className="p-5 space-y-5">
           {detail.role === "owner" ? (
             <div className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1 min-w-0">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
@@ -122,7 +122,7 @@ export function ShareModal({
                   onChange={(e) =>
                     onInviteRoleChange(e.target.value as "viewer" | "editor")
                   }
-                  className="h-9 px-3 text-xs rounded-sm outline-none"
+                  className="h-9 w-full rounded-sm px-3 text-xs outline-none sm:w-auto"
                   style={{
                     background: "var(--cream)",
                     border: "1px solid var(--border)",
@@ -143,7 +143,7 @@ export function ShareModal({
                   {userResults.map((user, i) => (
                     <button
                       key={user.id}
-                      className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors"
+                      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors"
                       disabled={busy}
                       onClick={() => onInviteUser(user)}
                       style={{
@@ -158,22 +158,22 @@ export function ShareModal({
                           "transparent";
                       }}
                     >
-                      <span>
+                      <span className="min-w-0">
                         <span
-                          className="block text-sm font-medium"
+                          className="block truncate text-sm font-medium"
                           style={{ color: "var(--ink)" }}
                         >
                           {user.display_name}
                         </span>
                         <span
-                          className="block text-xs"
+                          className="block truncate text-xs"
                           style={{ color: "var(--ink-faint)" }}
                         >
                           {user.email}
                         </span>
                       </span>
                       <span
-                        className="text-xs font-medium"
+                        className="shrink-0 text-xs font-medium"
                         style={{ color: "var(--ink-muted)" }}
                       >
                         Add as {inviteRole}
@@ -242,7 +242,7 @@ export function ShareModal({
           )}
 
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-sm"
+            className="flex items-center gap-3 rounded-sm px-3 py-3 sm:px-4"
             style={{
               background: "var(--cream)",
               border: "1px solid var(--border)",

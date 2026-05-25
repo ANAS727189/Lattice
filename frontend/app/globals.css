@@ -40,6 +40,7 @@ html {
 }
 
 body {
+  overflow-x: hidden;
   background: var(--cream);
   color: var(--ink);
   font-family: var(--font-ui);
@@ -266,5 +267,37 @@ button, input, select, textarea {
   .page-standard {
     --page-width: 100%;
     --page-height: 780px;
+  }
+}
+
+@media (max-width: 640px) {
+  .prose-editor h1 {
+    font-size: 1.9rem;
+  }
+
+  .prose-editor h2 {
+    font-size: 1.35rem;
+  }
+
+  .prose-editor pre {
+    padding: 1rem;
+  }
+
+  .lattice-pages {
+    --page-padding-x: clamp(1rem, 5vw, 1.35rem);
+    --page-padding-y: 1.5rem;
+    padding: 0.75rem 0.5rem 3rem;
+  }
+
+  .page-a4,
+  .page-standard {
+    --page-height: 680px;
+  }
+
+  .lattice-pages .ProseMirror {
+    font-size: 14px;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: 0 1px 2px rgba(26, 23, 20, 0.06);
   }
 }

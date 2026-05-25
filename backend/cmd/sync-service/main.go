@@ -47,7 +47,7 @@ var db *sql.DB
 
 const (
 	messageDocumentUpdate byte = 0
-	messageAwareness     byte = 1
+	messageAwareness      byte = 1
 )
 
 // upgrader upgrades HTTP requests to WebSocket connections.

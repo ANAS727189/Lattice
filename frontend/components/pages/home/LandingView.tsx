@@ -19,7 +19,7 @@ export function LandingView() {
 
       <Navbar variant="landing" className="relative z-10" />
 
-      <main className="relative z-10 max-w-6xl mx-auto px-8 pt-8 pb-28">
+      <main className="relative z-10 mx-auto max-w-6xl px-5 pb-20 pt-8 sm:px-8 sm:pb-28">
 
         {/* Hero */}
         <section className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
@@ -172,10 +172,12 @@ export function LandingView() {
             ].map((f, i) => (
               <div
                 key={f.n}
-                className="py-8 pr-10"
+                className={`py-8 md:pr-10 ${i > 0 ? "md:pl-10" : ""} ${
+                  i < 2 ? "border-b md:border-b-0 md:border-r" : ""
+                }`}
                 style={{
-                  borderRight: i < 2 ? "1px solid var(--border)" : "none",
-                  paddingLeft: i === 0 ? 0 : "2.5rem",
+                  borderColor: "var(--border)",
+                  paddingLeft: i === 0 ? 0 : undefined,
                 }}
               >
                 <span
@@ -281,7 +283,7 @@ export function LandingView() {
 
         {/* CTA */}
         <section
-          className="mt-24 rounded-sm px-10 py-12"
+          className="mt-24 rounded-sm px-6 py-10 sm:px-10 sm:py-12"
           style={{
             background: "var(--ink)",
             color: "var(--cream)",
