@@ -32,13 +32,13 @@ Lattice is a real-time collaborative document editor built with a Go microservic
 
 ## Architecture
 
-Lattice is split into a set of focused services that scale independently. The real-time sync service manages WebSocket connections, while a background worker persists CRDT updates and compacted snapshots.
+Lattice is split into a set of focused services that scale independently. The real-time sync service manages WebSocket connections, while persistence is now handled synchronously within sync-service to avoid data loss on unreliable hosting.
 
 ![Architecture overview](architecture/google-doc.png)
 ![CRDT vs OT](architecture/crdt-vs-ot.png)
 ![Database schema](architecture/database_schema.png)
 
-For a deeper write-up, see [docs/flow.md](docs/flow.md).
+For a deeper write-up, see [docs/flow.md](docs/flow.md). For the full technical deep-dive including the Render free tier failure analysis and strategy shift, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Services
 
@@ -47,7 +47,7 @@ For a deeper write-up, see [docs/flow.md](docs/flow.md).
 | api-gateway | Auth, user search, health checks | 8080 | Swagger UI at `/swagger/index.html` |
 | doc-service | Document CRUD and permissions | 8081 | Swagger UI at `/swagger/index.html` |
 | sync-service | WebSocket collaboration | 8082 | WebSocket endpoint `/ws/:id` |
-| persist-worker | Persist CRDT updates | n/a | Consumes Redis Pub/Sub |
+| persist-worker | Persist CRDT updates | n/a | Currently idle — logic merged into sync-service |
 | frontend | Next.js web app | 3000 | UI and editor |
 | postgres | Primary data store | 5432 | Users, documents, permissions |
 | redis | Pub/Sub and buffers | 6379 | Fan-out and persistence queues |
