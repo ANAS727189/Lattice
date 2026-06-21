@@ -8,6 +8,8 @@
 *.swp
 *.swo
 
+commands.txt
+
 # OS files
 .DS_Store
 Thumbs.db
